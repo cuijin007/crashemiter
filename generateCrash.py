@@ -11,6 +11,7 @@ from operator import itemgetter, attrgetter
 
 #默认地址
 defaultStartPath = "app/src/main/java/"
+defaultPakageName="your.pakage.name"
 
 #获取输入参数
 def getPath():
@@ -32,8 +33,8 @@ def handleLog(path):
         lines = fileReader.readlines()
         for line in lines:
             line = trimStartSpace(line)
-            if str.startswith(line, "at your.pakage.name"):
-                # print(line)
+            if str.startswith(line, "at " + defaultPakageName):
+                print(line)
                 num = getLineNum(line)
                 position = getLinePosition(line)
                 blameResult.append(gitBlame(position, num))
@@ -76,12 +77,14 @@ def gitBlame(filePosition, line):
 def getInfoFromBlameInfo(filePosition, blame):
     patternName = re.compile("\s\((.+?)\s")
     name = re.findall(patternName, blame, 0)
-    patternTime = re.compile("\(\w*\s*\s(.+?)\s\d*\)\s\s")
+    patternTime = re.compile("\d{4}[\-]\w*[\-]\w*\s\d*\:\d*\:\d*")
     timeResult = re.findall(patternTime, blame)
+    # print(name)
+    # print(timeResult)
     # if len(name) == 1 and len(time) == 1:
         #2016-07-26 19:44:22 +0800 时间格式
     info = {"name" : name[0], 
-            "time" : time.mktime(time.strptime(timeResult[0], "%Y-%m-%d %H:%M:%S +0800")),
+            "time" : time.mktime(time.strptime(timeResult[0], "%Y-%m-%d %H:%M:%S")),
             "timeHumen" : timeResult, 
             "file" : filePosition}
     return info
@@ -96,10 +99,13 @@ def printInfo(item):
 #main()
 path = getPath()
 if path != None:
-    result = handleLog(path)
-    # print(result)
-    print("======================最后修改========================")
-    printInfo(result[0])
-    print("======================相关人员=========================")
-    for item in result:
-        printInfo(item)
+    try:
+        result = handleLog(path)
+         # print(result)
+        print("======================最后修改========================")
+        printInfo(result[0])
+        print("======================相关人员=========================")
+        for item in result:
+            printInfo(item)
+    except :
+        print("没有找到相关信息，请手动查找")
