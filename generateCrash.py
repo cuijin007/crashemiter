@@ -10,8 +10,10 @@ import re
 from operator import itemgetter, attrgetter  
 
 #默认地址
-defaultStartPath = "app/src/main/java/"
-defaultPakageName="your.pakage.name"
+#包含各种model的地址
+defaultStartPath = ["app/src/main/java/"]
+
+pakageName = "pakageName"
 
 #获取输入参数
 def getPath():
@@ -33,7 +35,7 @@ def handleLog(path):
         lines = fileReader.readlines()
         for line in lines:
             line = trimStartSpace(line)
-            if str.startswith(line, "at " + defaultPakageName):
+            if str.startswith(line, "at pakageName"):
                 print(line)
                 num = getLineNum(line)
                 position = getLinePosition(line)
@@ -60,17 +62,31 @@ def getLineNum(line):
 
 #从获取文件的路径的
 def getLinePosition(line):
-    pattern = re.compile("at\s(.+)\.")
+    line = str.replace(line, ".java", "dotjava")
+    #找有.的路径
+    pattern = re.compile("at\s(.+)\.\w*")
     position = re.findall(pattern, line, 0)
+    print(position)
     if position != None and len(position) != 0:
-        return defaultStartPath + position[0].replace('.', '/') + ".java"
+         if str.__contains__(position[0], '$'):
+             print("ok")
+             #将$前的文件名抽出来
+             position = re.findall(re.compile("(.+)\$"), position[0], 0)
+    
+    if position != None and len(position) != 0:
+        for startPath in defaultStartPath:
+            plusPath = startPath + position[0].replace('.', '/') + ".java"
+            print(plusPath)
+            if os.path.isfile(plusPath):
+                print(plusPath)
+                return plusPath
 
 #获取文件的git blame信息
 def gitBlame(filePosition, line):
     command = "git blame " + filePosition + " -L " + line + "," + line
-    # print(command)
+    print(command)
     blame = os.popen(command).read()
-    # print(blame)
+    print(blame)
     return getInfoFromBlameInfo(filePosition, blame)
 
 #从blame信息中获取名字和时间
@@ -79,8 +95,8 @@ def getInfoFromBlameInfo(filePosition, blame):
     name = re.findall(patternName, blame, 0)
     patternTime = re.compile("\d{4}[\-]\w*[\-]\w*\s\d*\:\d*\:\d*")
     timeResult = re.findall(patternTime, blame)
-    # print(name)
-    # print(timeResult)
+    print(name)
+    print(timeResult)
     # if len(name) == 1 and len(time) == 1:
         #2016-07-26 19:44:22 +0800 时间格式
     info = {"name" : name[0], 
@@ -101,7 +117,7 @@ path = getPath()
 if path != None:
     try:
         result = handleLog(path)
-         # print(result)
+        print(result)
         print("======================最后修改========================")
         printInfo(result[0])
         print("======================相关人员=========================")
